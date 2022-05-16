@@ -55,7 +55,9 @@ gap=10; // [10:20]
 cage_bar_thickness=4.5; // [4:8]
 
 // Number of vertical bars on the cage
-cage_bar_count=10;
+cage_bar_count=4;
+
+cage_bar_width=2;
 
 // Width of the slit at the front opening
 slit_width=12; // [0:40]
@@ -199,7 +201,7 @@ module cage() {
 }
 
 module cage_bar_segments() {
-  for (theta = [step/2:step:360-step/2]) {
+  for (theta = [45-step/2:step:360-step/2]) {
     // Straight segment begins at a point along the base ring, and ends at a point a distance R1 from point Q
     straightSegStart = rz([R1+r1, 0, 0], theta);
     straightSegEnd = Q + ry(straightSegStart, tilt);
@@ -208,7 +210,7 @@ module cage_bar_segments() {
     // make a cylinder between straightSegStart and straightSegEnd
     segAngle = 90-atan2(straightSegEnd.z - straightSegStart.z, straightSegEnd.x - straightSegStart.x);
     segLength = norm(straightSegEnd - straightSegStart);
-    translate(straightSegStart) ry(segAngle) cylinder(r=r1, h=segLength);
+    translate(straightSegStart) ry(segAngle) rz(theta-90) scale([cage_bar_width,1]) cylinder(r=r1, h=segLength);
     
     // Make a torus between straightSegEnd and curveSegEnd, if necessary
     if (Phi>0) {
@@ -217,7 +219,14 @@ module cage_bar_segments() {
       vec2 = [curveSegEnd.x, 0, curveSegEnd.z]-P;
       curveAngle = acos(dot(vec1, vec2)/(norm(vec1)*norm(vec2)));
       curveRad = norm(vec1);
-      translate(straightSegEnd) ry(-180+tilt) dx(-curveRad) rx(90) torus(curveRad, r1, -curveAngle, rounded=true);
+      translate(straightSegEnd) 
+        ry(-180+tilt) 
+        dx(-curveRad) 
+        scale([1,
+            (cage_bar_width*(1-(abs(sin(theta))))) + 
+            (1-(abs(sin(theta-90))))/cage_bar_width]) 
+        rx(90) 
+        torus(curveRad, r1+(cage_bar_width/1)*((abs(sin(theta)))), -curveAngle, rounded=false);
     }
   }
 }
